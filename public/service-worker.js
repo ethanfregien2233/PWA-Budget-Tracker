@@ -35,3 +35,33 @@ self.addEventListener("install", function(evt) {
   
     self.clients.claim();
   });
+
+  self.addEventListener("fetch", evt => {
+    if(evt.request.url.includes('/api/')) {
+        console.log('[Service Worker] Fetch(data)', evt.request.url);
+
+evt.respondWith(
+                caches.open(cacheData).then(cache => {
+                return fetch(evt.request)
+                .then(response => {
+                    if (response.status === 200){
+                        cache.put(evt.request.url, response.clone());
+                    }
+                    return response;
+                })
+                .catch(err => {
+                    return cache.match(evt.request);
+                });
+            })
+            );
+            return;
+        }
+
+evt.respondWith(
+    caches.open(cacheName).then( cache => {
+      return cache.match(evt.request).then(response => {
+        return response || fetch(evt.request);
+      });
+    })
+  );
+}); 
