@@ -11,6 +11,7 @@ request.onsuccess = ({target}) => {
     }
 };
 
+
 function newRecord(record) {
   const transaction = db.transaction(["new_budget"], "readwrite");
   const store = transaction.objectStore("new_budget");
