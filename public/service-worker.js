@@ -1,11 +1,13 @@
-const cacheName = "static-cache-v2";
+const cacheName = "static-cache-v3";
 const cacheData = "data-cache-v1";
 const cacheTime = [
     "/",
     "/index.html",
-    "index.js", 
+    "/index.js", 
     "/idb.js",
-    "/style.css"
+    "/style.css",
+    "/icons/icon-72x72.png",
+    "/manifest.json"
 ];
 
 self.addEventListener("install", function(evt) {
@@ -39,8 +41,7 @@ self.addEventListener("install", function(evt) {
   self.addEventListener("fetch", evt => {
     if(evt.request.url.includes('/api/')) {
         console.log('[Service Worker] Fetch(data)', evt.request.url);
-
-evt.respondWith(
+        evt.respondWith(
                 caches.open(cacheData).then(cache => {
                 return fetch(evt.request)
                 .then(response => {
