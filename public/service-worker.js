@@ -16,6 +16,17 @@ const cacheTime = [
     './icons/icon-512x512.png'
 ];
 
+self.addEventListener('install', function(evt) {
+    evt.waitUntil(
+        caches.open(siteCache).then(cache => {
+            console.log('Your files were pre-cached');
+            return cache.addAll(cacheURL);
+        })
+    );
+    
+    self.skipWaiting();
+});
+
 self.addEventListener('fetch', function(evt) {
     if (evt.request.url.includes('/api/')) {
         evt.respondWith(
