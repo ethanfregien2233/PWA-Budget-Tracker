@@ -2,69 +2,58 @@
 const indexedDB = window.indexedDB || window.mozIndexedDB || window.msIndexedDB || webkitIndexedDB;
 
 let db;
+
 const request = indexedDB.open("budget_db", 1);
+
 request.onsuccess = ({target}) => {
     db = target.result;
     console.log(db);
     if (navigator.onLine) {
-        checkDatabase();
+        bigDB ();
     }
 };
 
+request.onupgradeneeded = ({target}) => {
+    let db = target.result;
+    db.createObjectStore("Pending", {
+        autoIncrement: true
+    });
+};
 
-function newRecord(record) {
-  const transaction = db.transaction(["new_budget"], "readwrite");
-  const store = transaction.objectStore("new_budget");
-
-  store.add(record);
+request.onerror = (event) => {
+    console.log("Whoopsie" + event.target.errorCode);
 }
 
-request.onupgradeneeded = function(event) {
-  const db = event.target.result;
-  db.createObjectStore('new_budget', { autoIncrement: true });
+function makeRecord (record) {
+    const transaction = db.transaction([ "Pending" ], "readwrite");
+    const store = transaction.objectStore("Pending");
+    store.add(record);
 };
 
-request.onsuccess = function (event) {
-  db = event.target.result;
+function bigDB () {
+    const transaction = db.transaction([ "Pending" ], "readwrite");
+    const store = transaction.objectStore("Pending");
 
-  
-  if (navigator.onLine) {
-    checkDB();
-  }
-};
-request.onerror = function (event) {
-    console.log("Uh oh " + event.target.errorCode);
-};
-  
-function checkDB() {
-    const transaction = db.transaction(["new_budget"], "readwrite");
-    const store = transaction.objectStore("new_budget");
     const getAll = store.getAll();
-  
-    getAll.onsuccess = function () {
-      if (getAll.result.length > 0) {
-        fetch("/api/transaction/bulk", {
-          method: "POST",
-          body: JSON.stringify(getAll.result),
-          headers: {
-            Accept: "application/json, text/plain, */*",
-            "Content-Type": "application/json"
-          }
-        })
-          .then(response => response.json())
-          .then(() => {
-            const transaction = db.transaction(["new_budget"], "readwrite");
-            const store = transaction.objectStore("new_budget");
-            store.clear();
-          });
-      }
-    };
-}
+    getAll.onsuccess = () => {
+        if (getAll.result.length > 0) {
+            fetch("/api/transaction/bulk", {
+                method: "POST",
+                body: JSON.stringify(getAll.result),
+                headers: {
+                    Accept: "application/json, text/plain, */*", 
+                    "Content-Type": "application/json"
+                }
+            }).then(response => {
+                return response.json();
+            }).then(() => {
+                const transaction = db.transaction([ "Pending" ], "readwrite");
+                const store = transaction.objectStore("Pending");
 
-function deleteLoading() {
-    const transaction = db.transaction(["new_budget"], "readwrite");
-    const store = transaction.objectStore("new_budget");
-    store.clear();
-}
-  
-window.addEventListener("online", checkDB); 
+                store.clear();
+            })
+        }
+    }
+};
+
+window.addEventListener("online", bigDB);

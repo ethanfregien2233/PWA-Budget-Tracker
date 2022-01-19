@@ -1,51 +1,30 @@
-const cacheName = "static-cache-v3";
-const cacheData = "data-cache-v1";
+let cacheName = "static-cache-v1";
+let cacheData = "data-cache-v1";
 const cacheTime = [
-    "/",
-    "/index.html",
-    "/index.js", 
-    "/idb.js",
-    "/style.css",
-    "/icons/icon-72x72.png",
-    "/manifest.json"
+    "./js/idb.js",
+    "./js/index.js",
+    "./manifest.json",
+    "./css/styles.css",
+    "./index.html",
+    './icons/icon-72x72.png',
+    './icons/icon-96x96.png',
+    './icons/icon-128x128.png',
+    './icons/icon-144x144.png',
+    './icons/icon-152x152.png',
+    './icons/icon-192x192.png',
+    './icons/icon-384x384.png',
+    './icons/icon-512x512.png'
 ];
 
-self.addEventListener("install", function(evt) {
-    evt.waitUntil(
-      caches.open(cacheName).then(cache => {
-        console.log("Files were pre cached");
-        return cache.addAll(cacheTime);
-      })
-    );
-  
-    self.skipWaiting();
-  });
-  
-  self.addEventListener("activate", function(evt) {
-    evt.waitUntil(
-      caches.keys().then(keyList => {
-        return Promise.all(
-          keyList.map(key => {
-            if (key !== cacheName && key !== cacheData) {
-              console.log("Removing cache data", key);
-              return caches.delete(key);
-            }
-          })
-        );
-      })
-    );
-  
-    self.clients.claim();
-  });
-
-  self.addEventListener("fetch", evt => {
-    if(evt.request.url.includes('/api/')) {
-        console.log('[Service Worker] Fetch(data)', evt.request.url);
+self.addEventListener('fetch', function(evt) {
+    if (evt.request.url.includes('/api/')) {
         evt.respondWith(
-                caches.open(cacheData).then(cache => {
+            caches
+            .open(cacheData)
+            .then(cache => {
                 return fetch(evt.request)
                 .then(response => {
-                    if (response.status === 200){
+                    if (response.status === 200) {
                         cache.put(evt.request.url, response.clone());
                     }
                     return response;
@@ -54,15 +33,20 @@ self.addEventListener("install", function(evt) {
                     return cache.match(evt.request);
                 });
             })
-            );
-            return;
-        }
-
-evt.respondWith(
-    caches.open(cacheName).then( cache => {
-      return cache.match(evt.request).then(response => {
-        return response || fetch(evt.request);
-      });
-    })
-  );
-}); 
+            .catch(err => console.log(err))
+        );
+        return;
+    }
+    evt.respondWith(
+        fetch(evt.request).catch(function() {
+            return caches.match(evt.request).then(function(response) {
+                if (response) {
+                    return response;
+                } else if (evt.request.headers.get('accept').includes('text/html')) {
+                    return caches.match('/');
+                }
+            });
+        })
+    );
+});
+  
