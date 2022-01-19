@@ -20,7 +20,7 @@ self.addEventListener('install', function(evt) {
     evt.waitUntil(
         caches.open(siteCache).then(cache => {
             console.log('Your files were pre-cached');
-            return cache.addAll(cacheURL);
+            return cache.addAll(cacheTime);
         })
     );
     
